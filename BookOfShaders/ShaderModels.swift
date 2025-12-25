@@ -6,12 +6,15 @@ struct ShaderExample : Identifiable {
     let title: String
     let fileName: String
     let entryPoint: String = "fragment_main"
-
-    var fragmentShaderSource: String? {
+    var fragmentShaderSource : String?
+    
+    init(title: String, fileName: String) {
+        self.title = title
+        self.fileName = fileName
+        
         if let sourceURL = Bundle.main.url(forResource: fileName, withExtension: "metal") {
-            return try? String(contentsOf: sourceURL, encoding: .utf8)
+            fragmentShaderSource =  try? String(contentsOf: sourceURL, encoding: .utf8)
         }
-        return nil
     }
 }
 
@@ -22,6 +25,24 @@ struct ShaderExampleSection : Identifiable {
 }
 
 class ShaderExampleStore : ObservableObject {
+    
+    init() {
+        NotificationCenter.default.addObserver(self, selector: #selector(onShaderCompiled), name: .didFragmentShaderCompiled, object: nil)
+    }
+    
+    @objc func onShaderCompiled(shaderCompiledNotif : NSNotification ){
+        
+        if let newSource = shaderCompiledNotif.userInfo?["NewSource"] as? String,
+           let shaderExample = shaderCompiledNotif.object as? ShaderExample  {
+           updateSessions(shaderExample: shaderExample,fragment: newSource)
+            
+           // fragmentSerialize(shaderExample: shaderExample,fragment: newSource)
+        }
+        
+        print("Shader compiled \(shaderCompiledNotif)")
+        
+    }
+    
     @Published var sections : [ShaderExampleSection] = [
         ShaderExampleSection(title: "Hello World", examples: [
             ShaderExample(title: "Solid Color", fileName: "02-hello-world")
@@ -95,4 +116,30 @@ class ShaderExampleStore : ObservableObject {
         }
         return nil
     }
+    
+    func updateSessions(shaderExample : ShaderExample, fragment : String )
+    {
+        for section in sections {
+            for example in section.examples {
+                if example.id == shaderExample.id {
+                    example.fragmentShaderSource = fragment
+                    return
+                }
+            }
+        }
+    }
+    
+    func fragmentSerialize( shaderExample : ShaderExample, fragment : String ) {
+        if let sourceURL = Bundle.main.url(forResource: shaderExample.fileName, withExtension: "metal") {
+            if let data = fragment.data(using: .utf8) {
+                do
+                {
+                    try data.write(to: sourceURL, options:.atomic)
+                } catch {
+                    print("Error while fragmentSerialize: \(error)")
+                }
+            }
+        }
+    }
+    
 }

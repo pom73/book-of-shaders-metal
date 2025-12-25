@@ -1,5 +1,12 @@
 import MetalKit
 
+
+extension Notification.Name {
+    static let didFragmentShaderCompiled = Notification.Name("didFragmentShaderCompiled")
+}
+
+
+
 class ShaderRenderer : NSObject, MTKViewDelegate {
     let device: MTLDevice
     let commandQueue: MTLCommandQueue
@@ -64,7 +71,11 @@ class ShaderRenderer : NSObject, MTKViewDelegate {
 
         do {
             renderPipelineState = try device.makeRenderPipelineState(descriptor: renderPipelineDescriptor)
+            let shaderCompiledNotification = Notification(name: .didFragmentShaderCompiled, object: example, userInfo: ["NewSource": fragmentShaderSource])
+            NotificationCenter.default.post(shaderCompiledNotification)
         } catch {
+            let shaderCompiledNotification = Notification(name: .didFragmentShaderCompiled, object: example, userInfo: ["Error": error])
+            NotificationCenter.default.post(shaderCompiledNotification)
             print("Error while creating render pipeline state: \(error)")
         }
     }
@@ -116,3 +127,4 @@ class ShaderRenderer : NSObject, MTKViewDelegate {
         lastRenderTime = currentTime
     }
 }
+
