@@ -16,12 +16,16 @@ struct ShaderExample : Identifiable {
             fragmentShaderSource =  try? String(contentsOf: sourceURL, encoding: .utf8)
         }
     }
+    
+    mutating func updateFragmentShader(_ newSource: String) {
+        fragmentShaderSource = newSource
+    }
 }
 
 struct ShaderExampleSection : Identifiable {
     var id: String { return title }
     let title: String
-    let examples: [ShaderExample]
+    var examples: [ShaderExample]
 }
 
 class ShaderExampleStore : ObservableObject {
@@ -119,11 +123,10 @@ class ShaderExampleStore : ObservableObject {
     
     func updateSessions(shaderExample : ShaderExample, fragment : String )
     {
-        for section in sections {
-            for example in section.examples {
-                if example.id == shaderExample.id {
-                    example.fragmentShaderSource = fragment
-                    return
+        for idx in sections.indices {
+            for idxSample in sections[idx].examples.indices {
+                if  sections[idx].examples[idxSample].id == shaderExample.id {
+                    sections[idx].examples[idxSample].updateFragmentShader(fragment)
                 }
             }
         }
