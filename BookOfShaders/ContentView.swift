@@ -10,7 +10,7 @@ struct ContentView: View {
                     Section(section.title) {
                         ForEach(section.examples) { example in
                             NavigationLink(example.title,
-                                           destination: ShaderEditorView(sourceString: $editorModel.sourceString,
+                                           destination: ShaderEditorView(sourceString: $editorModel.sourceString, compileString: $editorModel.compileShader,
                                                                          editorModel: editorModel),
                                            tag: example.id,
                                            selection: $editorModel.selectedExampleID)

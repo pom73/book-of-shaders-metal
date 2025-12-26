@@ -7,6 +7,7 @@ struct ShaderExample : Identifiable {
     let fileName: String
     let entryPoint: String = "fragment_main"
     var fragmentShaderSource : String?
+    var compileShader : String?
     
     init(title: String, fileName: String) {
         self.title = title
@@ -20,6 +21,11 @@ struct ShaderExample : Identifiable {
     mutating func updateFragmentShader(_ newSource: String) {
         fragmentShaderSource = newSource
     }
+    
+    mutating func updateErrorShader(_ compileError: String) {
+        compileShader = compileError
+    }
+
 }
 
 struct ShaderExampleSection : Identifiable {
@@ -36,15 +42,16 @@ class ShaderExampleStore : ObservableObject {
     
     @objc func onShaderCompiled(shaderCompiledNotif : NSNotification ){
         
-        if let newSource = shaderCompiledNotif.userInfo?["NewSource"] as? String,
-           let shaderExample = shaderCompiledNotif.object as? ShaderExample  {
-           updateSessions(shaderExample: shaderExample,fragment: newSource)
+        if let example = shaderCompiledNotif.object as? ShaderExample {
             
-           // fragmentSerialize(shaderExample: shaderExample,fragment: newSource)
+            if let newSource = shaderCompiledNotif.userInfo?["NewSource"] as? String {
+                updateFragment(shaderExample: example,fragment: newSource)
+            }
+
+            if let compileError = shaderCompiledNotif.userInfo?["Error"] as? String {
+                updateError(shaderExample: example,compileError: compileError)
+            }
         }
-        
-        print("Shader compiled \(shaderCompiledNotif)")
-        
     }
     
     @Published var sections : [ShaderExampleSection] = [
@@ -121,7 +128,7 @@ class ShaderExampleStore : ObservableObject {
         return nil
     }
     
-    func updateSessions(shaderExample : ShaderExample, fragment : String )
+    func updateFragment(shaderExample : ShaderExample, fragment : String )
     {
         for idx in sections.indices {
             for idxSample in sections[idx].examples.indices {
@@ -131,6 +138,18 @@ class ShaderExampleStore : ObservableObject {
             }
         }
     }
+
+    func updateError(shaderExample : ShaderExample, compileError : String )
+    {
+        for idx in sections.indices {
+            for idxSample in sections[idx].examples.indices {
+                if  sections[idx].examples[idxSample].id == shaderExample.id {
+                    sections[idx].examples[idxSample].updateErrorShader(compileError)
+                }
+            }
+        }
+    }
+
     
     func fragmentSerialize( shaderExample : ShaderExample, fragment : String ) {
         if let sourceURL = Bundle.main.url(forResource: shaderExample.fileName, withExtension: "metal") {

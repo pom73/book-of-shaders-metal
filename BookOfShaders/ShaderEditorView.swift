@@ -13,10 +13,14 @@ class ShaderEditorModel: ObservableObject {
                 renderer.example = example
                 renderer.fragmentFunctionSource = example.fragmentShaderSource
                 sourceString = sourceHighlighter.highlight(source)
+                compileShader = NSAttributedString(string: example.compileShader ?? "NoError")
             }
         }
     }
 
+    @Published var compileShader = NSAttributedString(string: "")
+    
+    
     @Published var sourceString = NSAttributedString(string: "") {
         didSet {
             renderer.fragmentFunctionSource = sourceString.string
@@ -69,32 +73,44 @@ struct ShaderEditorView: View {
     @StateObject var context = ShaderTextEditorContext()
     @Binding var sourceString: NSAttributedString
 
+    @StateObject var compileContext = ShaderTextEditorContext()
+    @Binding var compileString: NSAttributedString
+
     let device: MTLDevice
     let renderDelegate: MTKViewDelegate
     let theme: Splash.Theme
     let sourceHighlighter: SyntaxHighlighter<AttributedStringOutputFormat>
 
-    init(sourceString: Binding<NSAttributedString>, editorModel: ShaderEditorModel) {
+    init(sourceString: Binding<NSAttributedString>,
+         compileString: Binding<NSAttributedString>,
+         editorModel: ShaderEditorModel) {
         self._sourceString = sourceString
         self.device = editorModel.device
         self.renderDelegate = editorModel.renderDelegate
         self.theme = editorModel.theme
         self.sourceHighlighter = editorModel.sourceHighlighter
+        self._compileString =  compileString
     }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            ShaderTextEditor(text: $sourceString, context: context) { textView in
-                textView.backgroundColor = theme.backgroundColor
-                textView.insertionPointColor = NSColor.white
+            VStack(alignment: .leading) {
+                ShaderTextEditor(text: $sourceString, context: context) { textView in
+                    textView.backgroundColor = theme.backgroundColor
+                    textView.insertionPointColor = NSColor.white
+                }
+                .onChange(of: context.attributedString, perform: { newContents in
+                    guard let newString = newContents?.string else { return }
+                    // Re-highlight text on every keystroke. This might look like
+                    // it leads to an infinite loop, but updates via the context
+                    // are designed not to cause changes to be published back to us
+                    context.attributedString = sourceHighlighter.highlight(newString)
+                })
+                ShaderTextEditor(text:$compileString, context: compileContext) {textView in
+                    textView.backgroundColor = theme.backgroundColor
+                    textView.insertionPointColor = NSColor.white
+                }
             }
-            .onChange(of: context.attributedString, perform: { newContents in
-                guard let newString = newContents?.string else { return }
-                // Re-highlight text on every keystroke. This might look like
-                // it leads to an infinite loop, but updates via the context
-                // are designed not to cause changes to be published back to us
-                context.attributedString = sourceHighlighter.highlight(newString)
-            })
             MetalView(device: device, delegate: renderDelegate)
                 .frame(width: 200.0, height: 200.0)
                 .cornerRadius(4.0)

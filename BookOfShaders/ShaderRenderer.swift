@@ -50,13 +50,18 @@ class ShaderRenderer : NSObject, MTKViewDelegate {
         if (lastFragmentFunctionSource == fragmentShaderSource) {
             return
         }
-
+        var compileNotification = Notification(name: .didFragmentShaderCompiled, object: example)
+        
         var fragmentLibrary: MTLLibrary? = nil
         do {
             fragmentLibrary = try device.makeLibrary(source: fragmentShaderSource, options: nil)
         } catch {
             let nsError = error as NSError
-            print("\(nsError.localizedDescription)")
+            //print("\(nsError.localizedDescription)")
+            
+            compileNotification.userInfo = ["NewSource": fragmentShaderSource, "Error": nsError.localizedDescription ]
+            NotificationCenter.default.post(compileNotification)
+            
             lastFragmentFunctionSource = fragmentShaderSource
             return
         }
@@ -69,15 +74,17 @@ class ShaderRenderer : NSObject, MTKViewDelegate {
         renderPipelineDescriptor.vertexFunction = vertexFunction
         renderPipelineDescriptor.fragmentFunction = fragmentFunction
 
+       
+        
         do {
             renderPipelineState = try device.makeRenderPipelineState(descriptor: renderPipelineDescriptor)
-            let shaderCompiledNotification = Notification(name: .didFragmentShaderCompiled, object: example, userInfo: ["NewSource": fragmentShaderSource])
-            NotificationCenter.default.post(shaderCompiledNotification)
-        } catch {
-            let shaderCompiledNotification = Notification(name: .didFragmentShaderCompiled, object: example, userInfo: ["Error": error])
-            NotificationCenter.default.post(shaderCompiledNotification)
-            print("Error while creating render pipeline state: \(error)")
+            compileNotification.userInfo = ["NewSource": fragmentShaderSource, "Error": "All good!" ]
+        } catch let error {
+            print("pipelinestate errot : \(error.localizedDescription)")
         }
+        
+        NotificationCenter.default.post(compileNotification)
+
     }
 
     // MARK: - MTKViewDelegate

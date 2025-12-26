@@ -5,69 +5,6 @@ import Combine
 import SwiftUI
 
 
-class ShaderCompileView: NSTextView {
-    func setup(_ initialText: NSAttributedString) {
-        attributedString = initialText
-        allowsImageEditing = false
-        allowsUndo = true
-        backgroundColor = .clear
-        layoutManager?.defaultAttachmentScaling = .scaleProportionallyDown
-        setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-    }
-
-    var attributedString: NSAttributedString {
-        get { attributedString() }
-        set { textStorage?.setAttributedString(newValue) }
-    }
-
-    var isFirstResponder: Bool {
-        window?.firstResponder == self
-    }
-}
-
-
-struct ShaderCompile : NSViewRepresentable {
-    typealias ViewUserConfiguration = (NSTextView) -> Void
-    
-    public let scrollView = ShaderTextView.scrollableTextView()
-    
-    public var textView: ShaderCompileView {
-        scrollView.documentView as? ShaderCompileView ?? ShaderCompileView()
-    }
-
-//    @ObservedObject
-//    private var context: ShaderCompile
-
-    private var userConfiguration: ViewUserConfiguration
-
-    public init(
-        text: Binding<NSAttributedString>,
-        context: ShaderTextEditorContext,
-        userConfiguration: @escaping ViewUserConfiguration = { _ in }
-    ) {
-        self.text = text
-   //     self._context = ObservedObject(wrappedValue: context)
-        self.userConfiguration = userConfiguration
-    }
-    
-    func makeNSView(context: Context) -> some NSView {
-        textView.setup(text.wrappedValue)
-        userConfiguration(textView)
-        return scrollView
-    }
-
-    func updateNSView(_ nsView: NSViewType, context: Context) {
-    }
-
-    func makeCoordinator() -> ShaderTextViewDelegate {
-        return ShaderTextViewDelegate(text: text,
-                                      textView: textView,
-                                      context: context)
-    }
-    
-    private var text: Binding<NSAttributedString>
-}
-
 
 class ShaderTextView: NSTextView {
     func setup(_ initialText: NSAttributedString) {
