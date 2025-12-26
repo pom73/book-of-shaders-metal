@@ -42,7 +42,7 @@ class ShaderRenderer : NSObject, MTKViewDelegate {
         super.init()
     }
 
-    func makePipeline(view: MTKView) {
+    @MainActor func makePipeline(view: MTKView) {
         guard let fragmentShaderSource = fragmentFunctionSource else { return }
         guard let fragmentEntryPoint = example?.entryPoint else { return }
 

@@ -1,10 +1,7 @@
-
 import Foundation
 import AppKit
 import Combine
 import SwiftUI
-
-
 
 class ShaderTextView: NSTextView {
     func setup(_ initialText: NSAttributedString) {
@@ -30,6 +27,7 @@ class ShaderTextEditorContext: ObservableObject {
     @Published var attributedString: NSAttributedString?
 }
 
+@MainActor                     // <- UI‑related delegate must run on the main actor
 class ShaderTextViewDelegate: NSObject, NSTextViewDelegate {
     public init(
         text: Binding<NSAttributedString>,
@@ -46,11 +44,8 @@ class ShaderTextViewDelegate: NSObject, NSTextViewDelegate {
     }
 
     public let context: ShaderTextEditorContext
-
     public var text: Binding<NSAttributedString>
-
     var textView: ShaderTextView
-
     public var cancellables = Set<AnyCancellable>()
 
     func subscribeToContextChanges() {
@@ -64,11 +59,9 @@ class ShaderTextViewDelegate: NSObject, NSTextViewDelegate {
         }).store(in: &cancellables)
     }
 
+    // No more dispatch; we’re already on the main actor
     func syncContextWithTextView() {
-        // This is admittedly janky, but it cuts down on flicker
-        DispatchQueue.main.async {
-            self.syncContextWithTextViewImmediate()
-        }
+        syncContextWithTextViewImmediate()
     }
 
     func syncContextWithTextViewImmediate() {
@@ -85,7 +78,6 @@ class ShaderTextViewDelegate: NSObject, NSTextViewDelegate {
         syncContextWithTextView()
     }
 }
-
 
 struct ShaderTextEditor : NSViewRepresentable {
     typealias ViewUserConfiguration = (NSTextView) -> Void

@@ -1,6 +1,7 @@
 
 import SwiftUI
 
+
 struct ShaderExample : Identifiable {
     var id: String { return title }
     let title: String
@@ -15,6 +16,16 @@ struct ShaderExample : Identifiable {
         
         if let sourceURL = Bundle.main.url(forResource: fileName, withExtension: "metal") {
             fragmentShaderSource =  try? String(contentsOf: sourceURL, encoding: .utf8)
+        } else {
+            if FileManager.default.fileExists(atPath: fileName) == false
+            {
+                if FileManager.default.createFile(atPath: fileName, contents: nil) {
+                    fragmentShaderSource =  try? String(contentsOfFile: fileName)
+                }
+                
+            } else {
+                fragmentShaderSource =  try? String(contentsOfFile: fileName)
+            }
         }
     }
     
@@ -36,6 +47,14 @@ struct ShaderExampleSection : Identifiable {
 
 class ShaderExampleStore : ObservableObject {
     
+    var existingSectionNames : [String] {
+        sections.map({$0.title})
+    }
+    
+    var existingShaderNames : [String] {
+        sections.flatMap(\.examples).map(\.id)
+    }
+    
     init() {
         NotificationCenter.default.addObserver(self, selector: #selector(onShaderCompiled), name: .didFragmentShaderCompiled, object: nil)
     }
@@ -53,6 +72,27 @@ class ShaderExampleStore : ObservableObject {
             }
         }
     }
+    
+    func addSections(_ newSection : ShaderExampleSection)  {
+        if sections.contains(where:{ $0.id == newSection.id} ) == false {
+           sections.append(newSection)
+        }
+    }
+
+    func addShaderToSections(_ toSection : String, _ shaderExample : ShaderExample) {
+        
+        if let _sectionsidx = sections.firstIndex(where: { $0.id == toSection } ) {
+            sections[_sectionsidx].examples.append(shaderExample)
+        }
+    }
+
+    func remShaderExample(_ shaderName : String ) {
+        
+        if let _sectionsidx = sections.firstIndex(where: { $0.examples.contains(where: { $0.id == shaderName }) } ) {
+            sections[_sectionsidx].examples.removeAll(where: { example in example.id == shaderName } )
+        }
+    }
+
     
     @Published var sections : [ShaderExampleSection] = [
         ShaderExampleSection(title: "Hello World", examples: [
