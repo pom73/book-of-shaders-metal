@@ -65,7 +65,7 @@ class ShaderEditorModel: ObservableObject {
             case .addShader:
                 exampleStore.addSections(ShaderExampleSection(title: sectionName, examples: []))
                 if let _fileNameURL = fileNameURL {
-                    exampleStore.addShaderToSections(sectionName, ShaderExample(title: _fileNameURL.lastPathComponent.deletingPathExtension(), fileName: _fileNameURL.path()))
+                    exampleStore.addShaderToSections(sectionName, ShaderExample(title: _fileNameURL.deletingPathExtension().lastPathComponent, fileName: _fileNameURL.path()))
                 }
             case .remShader:
                 exampleStore.remShaderExample(selectedShader)

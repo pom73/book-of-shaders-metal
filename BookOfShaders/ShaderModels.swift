@@ -1,6 +1,7 @@
 
 import SwiftUI
 
+let shaderImportDirName = String("ShadersForBookofShaders")
 
 struct ShaderExample : Identifiable {
     var id: String { return title }
@@ -9,6 +10,13 @@ struct ShaderExample : Identifiable {
     let entryPoint: String = "fragment_main"
     var fragmentShaderSource : String?
     var compileShader : String?
+    
+    init(title: String, fileName: URL) {
+        self.title = title
+        self.fileName = fileName.path()
+        fragmentShaderSource =  try? String(contentsOf: fileName, encoding: .utf8)
+    }
+    
     
     init(title: String, fileName: String) {
         self.title = title
@@ -54,9 +62,57 @@ class ShaderExampleStore : ObservableObject {
     var existingShaderNames : [String] {
         sections.flatMap(\.examples).map(\.id)
     }
+  
+    private func createShadersFolderIfNeeded() -> URL? {
+        // 1️⃣ Get the URL for the Documents directory
+        guard let documentsURL = FileManager.default.urls(
+                for: .documentDirectory,
+                in: .userDomainMask
+              ).first
+        else {
+            print("Could not locate the Documents directory.")
+            fatalError()
+        }
+
+        // 2️⃣ Append your custom folder name
+        let shadersFolderURL = documentsURL.appendingPathComponent(shaderImportDirName)
+
+        // 3️⃣ Try to create the folder (create intermediate directories if needed)
+        do {
+            try FileManager.default.createDirectory(
+                at: shadersFolderURL,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+            return shadersFolderURL
+        } catch {
+            print("❌ Could not create Shaders folder: \(error)")
+        }
+
+        return shadersFolderURL
+    }
     
     init() {
         NotificationCenter.default.addObserver(self, selector: #selector(onShaderCompiled), name: .didFragmentShaderCompiled, object: nil)
+        if let _shadersFolderURL = createShadersFolderIfNeeded() {
+            do
+            {
+                let files = try FileManager.default.contentsOfDirectory( at: _shadersFolderURL, includingPropertiesForKeys: [.nameKey, .isDirectoryKey], options: [.skipsHiddenFiles] )
+
+                addSections(ShaderExampleSection(title: "Import", examples: []))
+                
+                for url in files {
+                    if url.pathExtension == "metal" {
+                        print("Found a shader source:", url.lastPathComponent)
+                        addShaderToSections("Import", ShaderExample(title: url.deletingPathExtension().lastPathComponent, fileName: url))
+                    }
+                }
+            }
+            catch(let error) {
+                print("\(error)")
+            }
+        }
+        
     }
     
     @objc func onShaderCompiled(shaderCompiledNotif : NSNotification ){
