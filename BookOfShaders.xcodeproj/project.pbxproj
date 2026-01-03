@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		090B55402F09A22300DED825 /* Splash in Frameworks */ = {isa = PBXBuildFile; productRef = 090B553F2F09A22300DED825 /* Splash */; };
 		837A1A842A3A7EB900FF761E /* ShaderEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837A1A832A3A7EB900FF761E /* ShaderEditorView.swift */; };
 		837A1AA52A3A89B300FF761E /* 05a-shape-line.metal in CopyFiles */ = {isa = PBXBuildFile; fileRef = 837A1A8F2A3A898300FF761E /* 05a-shape-line.metal */; };
 		837A1AA62A3A89B300FF761E /* 05b-shape-quintic.metal in CopyFiles */ = {isa = PBXBuildFile; fileRef = 837A1A932A3A898300FF761E /* 05b-shape-quintic.metal */; };
@@ -17,7 +18,6 @@
 		83F388352A37AD9B008E7395 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F388342A37AD9B008E7395 /* ContentView.swift */; };
 		83F388372A37AD9C008E7395 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 83F388362A37AD9C008E7395 /* Assets.xcassets */; };
 		83F3883A2A37AD9C008E7395 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 83F388392A37AD9C008E7395 /* Preview Assets.xcassets */; };
-		83F388492A37B083008E7395 /* Splash in Frameworks */ = {isa = PBXBuildFile; productRef = 83F388482A37B083008E7395 /* Splash */; };
 		83F388A92A37E818008E7395 /* 02-hello-world.metal in CopyFiles */ = {isa = PBXBuildFile; fileRef = 83F3884A2A37C53C008E7395 /* 02-hello-world.metal */; };
 		83F388AA2A37EFF1008E7395 /* 03a-uniforms-time.metal in CopyFiles */ = {isa = PBXBuildFile; fileRef = 83F3884C2A37C5E1008E7395 /* 03a-uniforms-time.metal */; };
 		83F388AB2A37F004008E7395 /* 03b-fragment-coord.metal in CopyFiles */ = {isa = PBXBuildFile; fileRef = 83F3884E2A37C6AE008E7395 /* 03b-fragment-coord.metal */; };
@@ -77,18 +77,26 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				83F388492A37B083008E7395 /* Splash in Frameworks */,
+				090B55402F09A22300DED825 /* Splash in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		090B553E2F09A22300DED825 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		83F388262A37AD9B008E7395 = {
 			isa = PBXGroup;
 			children = (
 				83F388312A37AD9B008E7395 /* BookOfShaders */,
 				83F388C92A38C4F5008E7395 /* Splash */,
+				090B553E2F09A22300DED825 /* Frameworks */,
 				83F388302A37AD9B008E7395 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -162,7 +170,7 @@
 			);
 			name = BookOfShaders;
 			packageProductDependencies = (
-				83F388482A37B083008E7395 /* Splash */,
+				090B553F2F09A22300DED825 /* Splash */,
 			);
 			productName = BookOfShaders;
 			productReference = 83F3882F2A37AD9B008E7395 /* BookOfShaders.app */;
@@ -194,7 +202,6 @@
 			);
 			mainGroup = 83F388262A37AD9B008E7395;
 			packageReferences = (
-				83F388472A37B083008E7395 /* XCRemoteSwiftPackageReference "Splash" */,
 			);
 			productRefGroup = 83F388302A37AD9B008E7395 /* Products */;
 			projectDirPath = "";
@@ -473,21 +480,9 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		83F388472A37B083008E7395 /* XCRemoteSwiftPackageReference "Splash" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:JohnSundell/Splash.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.16.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
 /* Begin XCSwiftPackageProductDependency section */
-		83F388482A37B083008E7395 /* Splash */ = {
+		090B553F2F09A22300DED825 /* Splash */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 83F388472A37B083008E7395 /* XCRemoteSwiftPackageReference "Splash" */;
 			productName = Splash;
 		};
 /* End XCSwiftPackageProductDependency section */

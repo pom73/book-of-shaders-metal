@@ -1,6 +1,7 @@
 
 import SwiftUI
 
+// under this shaderImportDirName every directory is a section and metal files under are shaders to be loaded
 let shaderImportDirName = String("ShadersForBookofShaders")
 let defaultFragmentShader = """
    #include <metal_stdlib>
@@ -104,11 +105,15 @@ class ShaderExampleStore : ObservableObject {
     func serializeToFragments() {
         if let _shadersFolderURL = createShadersFolderIfNeeded() {
            
-            if let _importIdx = sections.firstIndex(where:{$0.title == "Import"} ) {
-                for exampleItem in sections[_importIdx].examples {
+            for section in sections {
+                let sectionFolder = _shadersFolderURL.appendingPathComponent(section.title);
+                do { try FileManager.default.createDirectory(at: sectionFolder,withIntermediateDirectories: true,attributes: nil) }
+                catch( let error ) { print("creating sections folder: \(error)") }
+                
+                for exampleItem in section.examples {
                     if let data = exampleItem.fragmentShaderSource?.data(using: .utf8) {
                         do {
-                            let filePath = _shadersFolderURL.appending(component: exampleItem.fileName)
+                            let filePath = sectionFolder.appending(component: exampleItem.title + ".metal")
                             try data.write(to: filePath)
                         } catch( let error ) {
                             print("Error while fragmentSerialize: \(error)")
@@ -150,16 +155,26 @@ class ShaderExampleStore : ObservableObject {
     init() {
         NotificationCenter.default.addObserver(self, selector: #selector(onShaderCompiled), name: .didFragmentShaderCompiled, object: nil)
         if let _shadersFolderURL = createShadersFolderIfNeeded() {
+            sections.removeAll(keepingCapacity: true)
+            
             do
             {
                 let files = try FileManager.default.contentsOfDirectory( at: _shadersFolderURL, includingPropertiesForKeys: [.nameKey, .isDirectoryKey], options: [.skipsHiddenFiles] )
-
-                addSections(ShaderExampleSection(title: "Import", examples: []))
                 
-                for url in files {
-                    if url.pathExtension == "metal" {
-                        print("Found a shader source:", url.lastPathComponent)
-                        addShaderToSections("Import", ShaderExample(title: url.deletingPathExtension().lastPathComponent, fileName: url))
+                // every directory is a section and metal files under are shaders to be loaded
+                
+                for urlDir in files {
+                    if urlDir.hasDirectoryPath{
+                        addSections(ShaderExampleSection(title: urlDir.lastPathComponent, examples: []))
+
+                        let shaders = try FileManager.default.contentsOfDirectory( at: urlDir, includingPropertiesForKeys: [.nameKey, .isDirectoryKey], options: [.skipsHiddenFiles] )
+
+                        for urlShader in shaders {
+                            if urlShader.pathExtension == "metal" {
+                                print("Found a shader source:", urlShader.lastPathComponent)
+                                addShaderToSections(urlDir.lastPathComponent, ShaderExample(title: urlShader.deletingPathExtension().lastPathComponent, fileName: urlShader))
+                            }
+                        }
                     }
                 }
             }
@@ -206,25 +221,25 @@ class ShaderExampleStore : ObservableObject {
 
     
     @Published var sections : [ShaderExampleSection] = [
-        ShaderExampleSection(title: "Hello World", examples: [
-            ShaderExample(title: "Solid Color", fileName: "02-hello-world")
-        ]),
-        ShaderExampleSection(title: "Uniforms", examples: [
-            ShaderExample(title: "Time", fileName: "03a-uniforms-time"),
-            ShaderExample(title: "Fragment Coordinates", fileName: "03b-fragment-coord")
-        ]),
-        ShaderExampleSection(title: "Shaping Functions", examples: [
-            ShaderExample(title: "Line", fileName:"05a-shape-line"),
-            ShaderExample(title: "Quintic Curve", fileName:"05b-shape-quintic"),
-            ShaderExample(title: "Step", fileName:"05c-shape-step"),
-            ShaderExample(title: "Smoothstep", fileName:"05d-shape-smoothstep")
-        ]),
-        ShaderExampleSection(title: "Colors", examples: [
-            ShaderExample(title: "Mixing Colors", fileName:"06a-color-mix"),
-            //ShaderExample(title: "Color Gradients", fileName:"06b-color-gradient"),
-            //ShaderExample(title: "HSB Color Space", fileName:"06c-color-hsb"),
-            //ShaderExample(title: "HSB in Polar Coordinates", fileName:"06d-color-polar")
-        ]),
+//        ShaderExampleSection(title: "Hello World", examples: [
+//            ShaderExample(title: "Solid Color", fileName: "02-hello-world")
+//        ]),
+//        ShaderExampleSection(title: "Uniforms", examples: [
+//            ShaderExample(title: "Time", fileName: "03a-uniforms-time"),
+//            ShaderExample(title: "Fragment Coordinates", fileName: "03b-fragment-coord")
+//        ]),
+//        ShaderExampleSection(title: "Shaping Functions", examples: [
+//            ShaderExample(title: "Line", fileName:"05a-shape-line"),
+//            ShaderExample(title: "Quintic Curve", fileName:"05b-shape-quintic"),
+//            ShaderExample(title: "Step", fileName:"05c-shape-step"),
+//            ShaderExample(title: "Smoothstep", fileName:"05d-shape-smoothstep")
+//        ]),
+//        ShaderExampleSection(title: "Colors", examples: [
+//            ShaderExample(title: "Mixing Colors", fileName:"06a-color-mix"),
+//            //ShaderExample(title: "Color Gradients", fileName:"06b-color-gradient"),
+//            //ShaderExample(title: "HSB Color Space", fileName:"06c-color-hsb"),
+//            //ShaderExample(title: "HSB in Polar Coordinates", fileName:"06d-color-polar")
+//        ]),
         /*
         ShaderExampleSection(title: "Shapes", examples: [
             ShaderExample(title: "Rectangle", fileName: "07a-shape-rectangle"),

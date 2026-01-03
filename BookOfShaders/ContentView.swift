@@ -1,15 +1,19 @@
 import SwiftUI
 
+
 struct ContentView: View {
     @EnvironmentObject var editorModel: ShaderEditorModel
     @State private var showModal            = false
     @State var shaderModelOperation = ShaderModelOperation.nop
+    @State var sectionExpanded : [String : Bool] = [:]
     
     var body: some View {
         NavigationView {
             List {
                 ForEach(editorModel.exampleStore.sections) { section in
-                    Section(section.title) {
+                    Section(section.title,isExpanded: Binding<Bool> (
+                        get: {sectionExpanded[section.id] ?? false},
+                        set: {sectionExpanded[section.id] = $0} )) {
                         ForEach(section.examples) { example in
                             NavigationLink(example.title,
                                            destination: ShaderEditorView(sourceString: $editorModel.sourceString,
@@ -25,6 +29,7 @@ struct ContentView: View {
             .frame(idealWidth: 225)
             Text("Select a shader")
         }
+        .onAppear(perform: { editorModel.exampleStore.sections.forEach{ sectionExpanded[$0.id] = false }} )
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 Button(action: toggleSidebar, label: {
