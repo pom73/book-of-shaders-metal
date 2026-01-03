@@ -2,6 +2,19 @@
 import SwiftUI
 
 let shaderImportDirName = String("ShadersForBookofShaders")
+let defaultFragmentShader = """
+   #include <metal_stdlib>
+   using namespace metal;
+
+   [[fragment]]
+   float4 fragment_main() {
+       // Return a solid color for every pixel (magenta by default).
+       // The fourth component of the color is alpha, representing
+       // opacity. It has no effect because blending isn't enabled.
+       // But try changing the other values to change the color!
+       return float4(1.0f, 0.0f, 1.0f, 1.0f);
+   }
+"""
 
 struct ShaderExample : Identifiable {
     var id: String { return title }
@@ -25,17 +38,12 @@ struct ShaderExample : Identifiable {
         if let sourceURL = Bundle.main.url(forResource: fileName, withExtension: "metal") {
             fragmentShaderSource =  try? String(contentsOf: sourceURL, encoding: .utf8)
         } else {
-            if FileManager.default.fileExists(atPath: fileName) == false
-            {
-                if FileManager.default.createFile(atPath: fileName, contents: nil) {
-                    fragmentShaderSource =  try? String(contentsOfFile: fileName)
-                }
-                
-            } else {
-                fragmentShaderSource =  try? String(contentsOfFile: fileName)
+            if FileManager.default.fileExists(atPath: fileName) == false {
+                fragmentShaderSource =  try? String(contentsOfFile: fileName, encoding: .utf8)
             }
         }
     }
+    
     
     mutating func updateFragmentShader(_ newSource: String) {
         fragmentShaderSource = newSource
@@ -63,8 +71,11 @@ class ShaderExampleStore : ObservableObject {
         sections.flatMap(\.examples).map(\.id)
     }
   
+    var defaultStorePath: URL? {
+        return createShadersFolderIfNeeded()
+    }
+    
     private func createShadersFolderIfNeeded() -> URL? {
-        // 1️⃣ Get the URL for the Documents directory
         guard let documentsURL = FileManager.default.urls(
                 for: .documentDirectory,
                 in: .userDomainMask
@@ -73,11 +84,9 @@ class ShaderExampleStore : ObservableObject {
             print("Could not locate the Documents directory.")
             fatalError()
         }
-
-        // 2️⃣ Append your custom folder name
+     
         let shadersFolderURL = documentsURL.appendingPathComponent(shaderImportDirName)
 
-        // 3️⃣ Try to create the folder (create intermediate directories if needed)
         do {
             try FileManager.default.createDirectory(
                 at: shadersFolderURL,
@@ -91,6 +100,52 @@ class ShaderExampleStore : ObservableObject {
 
         return shadersFolderURL
     }
+    
+    func serializeToFragments() {
+        if let _shadersFolderURL = createShadersFolderIfNeeded() {
+           
+            if let _importIdx = sections.firstIndex(where:{$0.title == "Import"} ) {
+                for exampleItem in sections[_importIdx].examples {
+                    if let data = exampleItem.fragmentShaderSource?.data(using: .utf8) {
+                        do {
+                            let filePath = _shadersFolderURL.appending(component: exampleItem.fileName)
+                            try data.write(to: filePath)
+                        } catch( let error ) {
+                            print("Error while fragmentSerialize: \(error)")
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    func newShaderExample(_ toSection : String, _ newShaderName : String ) {
+        addSections(ShaderExampleSection(title: toSection, examples: []))
+        
+        if let sectionIdx = sections.firstIndex(where: {$0.title == toSection}),
+           let _storeShaders = createShadersFolderIfNeeded() {
+            
+            let existingcount   = existingShaderNames.count(where: {$0.contains(newShaderName) })
+            
+            let finalShaderName = (existingcount != 0) ? newShaderName + "\(existingcount)" : newShaderName
+            let fragmentSource  = (existingcount != 0) ?
+            sections.first(where: {$0.examples.contains(where: {$0.title == newShaderName})})?.examples.first(where: {$0.title == newShaderName})!.fragmentShaderSource! :  defaultFragmentShader
+            
+            let toFileURL  = _storeShaders.appendingPathComponent(finalShaderName+".metal")
+            let dataToFile = fragmentSource!.data(using: .utf8)
+            
+            do
+            {
+                try dataToFile?.write(to: toFileURL)
+                sections[sectionIdx].examples.append(ShaderExample(title: finalShaderName,fileName :toFileURL))
+            }
+            catch(let error) {
+                print("Error creating shader : \(error)")
+            }
+        }
+    }
+    
     
     init() {
         NotificationCenter.default.addObserver(self, selector: #selector(onShaderCompiled), name: .didFragmentShaderCompiled, object: nil)
@@ -245,19 +300,4 @@ class ShaderExampleStore : ObservableObject {
             }
         }
     }
-
-    
-    func fragmentSerialize( shaderExample : ShaderExample, fragment : String ) {
-        if let sourceURL = Bundle.main.url(forResource: shaderExample.fileName, withExtension: "metal") {
-            if let data = fragment.data(using: .utf8) {
-                do
-                {
-                    try data.write(to: sourceURL, options:.atomic)
-                } catch {
-                    print("Error while fragmentSerialize: \(error)")
-                }
-            }
-        }
-    }
-    
 }

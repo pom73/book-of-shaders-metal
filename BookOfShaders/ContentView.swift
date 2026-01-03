@@ -16,6 +16,7 @@ struct ContentView: View {
                                                editorModel: editorModel),
                                            tag: example.id,
                                            selection: $editorModel.selectedExampleID)
+                            
                         }
                     }
                 }
@@ -38,6 +39,15 @@ struct ContentView: View {
                 Button(action: remShaderExample, label: { Image(systemName: "minus")
                 })
             }
+            ToolbarItem(placement: .navigation) {
+                Button(action: exportShaderExample, label: { Image(systemName: "square.and.arrow.down")
+                })
+            }
+            ToolbarItem(placement: .navigation) {
+                Button(action: newShaderExample, label: { Image(systemName: "plus.square.on.square")
+                })
+            }
+
         }
         .sheet(isPresented : $showModal ) {
             NewShaderExample(_shaderEditorModel: editorModel, shaderModelOperation: $shaderModelOperation)
@@ -53,7 +63,17 @@ struct ContentView: View {
         shaderModelOperation = .addShader
         showModal.toggle()
     }
+
+    private func newShaderExample() {
+        shaderModelOperation = .newShader
+        showModal.toggle()
+    }
+
     
+    private func exportShaderExample() {
+        editorModel.exampleStore.serializeToFragments()
+    }
+
     private func toggleSidebar() {
         NSApp.keyWindow?.firstResponder?.tryToPerform(#selector(NSSplitViewController.toggleSidebar(_:)),
                                                       with: nil)

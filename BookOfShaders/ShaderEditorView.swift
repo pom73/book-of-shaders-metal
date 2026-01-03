@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 
 
 enum ShaderModelOperation {
-    case nop, addShader, remShader;
+    case nop, addShader, remShader, newShader;
 }
 
 
@@ -69,7 +69,8 @@ class ShaderEditorModel: ObservableObject {
                 }
             case .remShader:
                 exampleStore.remShaderExample(selectedShader)
-            
+            case .newShader:
+                exampleStore.newShaderExample(sectionName, selectedShader )
         }
     }
 }
@@ -117,13 +118,20 @@ struct ShaderEditorView: View {
                     textView.backgroundColor = theme.backgroundColor
                     textView.insertionPointColor = NSColor.white
                 }
-                .onChange(of: context.attributedString, perform: { newContents in
+                .onChange(of: context.attributedString,initial:true)  { oldContents,newContents  in
                     guard let newString = newContents?.string else { return }
                     // Re-highlight text on every keystroke. This might look like
                     // it leads to an infinite loop, but updates via the context
                     // are designed not to cause changes to be published back to us
                     context.attributedString = sourceHighlighter.highlight(newString)
-                })
+                }
+//                .onChange(of: context.attributedString, perform :  { newContents  in
+//                    guard let newString = newContents?.string else { return }
+//                    // Re-highlight text on every keystroke. This might look like
+//                    // it leads to an infinite loop, but updates via the context
+//                    // are designed not to cause changes to be published back to us
+//                    context.attributedString = sourceHighlighter.highlight(newString)
+//                })
                 Text(compileError)
                     .onReceive(NotificationCenter.default.publisher(for: .didFragmentShaderCompiled)) {
                         notification in
@@ -226,7 +234,7 @@ struct FilePickerTextField: View {
     var filePath: String {
         selectedFileURL?.path ?? "No file selected for \(label) "
     }
-    
+    let startingDirectory : URL?
     let label : String
     
     var body: some View {
@@ -243,7 +251,7 @@ struct FilePickerTextField: View {
         }
         .fileImporter(
             isPresented: $isFileImporterPresented,
-            allowedContentTypes: [.sourceCode ], // Specify allowed file types
+            allowedContentTypes: [.sourceCode, .folder ], // Specify allowed file types
             allowsMultipleSelection: false // Set to true for multiple file selection
         ) { result in
             switch result {
@@ -258,6 +266,7 @@ struct FilePickerTextField: View {
                 print("File import error: \(error.localizedDescription)")
             }
         }
+        .fileDialogDefaultDirectory(startingDirectory)
     }
 }
 
@@ -280,9 +289,14 @@ struct NewShaderExample : View {
             case .addShader:
             VStack(alignment: .leading) {
                 DropdownWithEditField(selection: $sectionName, options: _shaderEditorModel.exampleStore.existingSectionNames, label: "Section's Name" )
-                FilePickerTextField(selectedFileURL: $fileNameURL, label: "Fragment Shader's file")
+                FilePickerTextField(selectedFileURL: $fileNameURL, startingDirectory: _shaderEditorModel.exampleStore.defaultStorePath, label: "Fragment Shader's file")
             }.padding()
             case .remShader:
+                DropdownWithEditField(selection: $selectedShader, options: _shaderEditorModel.exampleStore.existingShaderNames, label: "Fragment's name" )
+                .padding()
+            case .newShader:
+                DropdownWithEditField(selection: $sectionName, options: _shaderEditorModel.exampleStore.existingSectionNames, label: "Section's Name" )
+                .padding()
                 DropdownWithEditField(selection: $selectedShader, options: _shaderEditorModel.exampleStore.existingShaderNames, label: "Fragment's name" )
                 .padding()
             case .nop:
