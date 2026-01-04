@@ -72,7 +72,7 @@ float4 fragment_main(FragmentIn in [[stage_in]],
 //    color = float3(drawSmoothRectangleFull(st, float2(0.2, 0.2), float2(0.15), 0));
 //    color = float3(drawSmoothRectanglePerimeter(st, float2(0.2, 0.2), float2(0.15), 0.01));
 //	color = float3(drawCircle(st, float2(0.5), 0.49));
-	color = float3(drawCirclePerimeter(st, float2(0.5), 0.49, 0.01));
+	color = float3(drawCirclePerimeter(st, float2(0.2), 0.5+0.5*sin(uniforms.time), 0.01));
 
 
     return float4(color, 1.0f);
