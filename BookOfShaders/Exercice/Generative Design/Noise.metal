@@ -25,6 +25,11 @@ float rand( float val) {
 	return fract(sin(val)*100000);
 }
 
+float random( float val) {
+	return fract(sin(dot(float2(val),float2(12.9898,78.233)))*43758.5453123);
+}
+
+
 float random( float2 val) {
 	return fract(sin(dot(val.xy,float2(12.9898,78.233)))*43758.5453123);
 }
@@ -33,21 +38,57 @@ float random( float2 val, float2 wrt, float scale) {
 	return fract(sin(dot(val, wrt))*scale);
 }
 
+float drawSmoothRectanglePerimiter(thread float2 &st, float2 LeftBottom, float2 size, float nudge, float borderThickness, float time ) {
+	// project position relaitive to center of rectangle 
+	// abs because of symetrie
+	
+	float2 distanceToRectangleBorder = abs(st - (LeftBottom + size*0.5) + rand(0.1*time)*0.01) - size*0.5;
+	
+	float distance =  length(max(distanceToRectangleBorder,0)) + min(max(distanceToRectangleBorder.x, distanceToRectangleBorder.y),0.0) ;
 
-float2 truchetPattern(float2 _st, float _index){
 
-    _index = fract(((_index-0.5)*2.0));
-
-    if (_index > 0.75) {
-        _st = float2(1.0) - _st;
-    } else if (_index > 0.5) {
-        _st = float2(1.0-_st.x,_st.y);
-    } else if (_index > 0.25) {
-        _st = 1.0-float2(1.0-_st.x,_st.y);
-    }
-    return _st;
+	return smoothstep(0, 0.01,abs(distance) - borderThickness);
 }
 
+float2 random2(float2 val) {
+	// projection to two new random vector 
+	float2 proj = float2( dot(val, float2(56,78)), dot(val, float2(125.5,89) ) );
+	return -1 + 2*fract(sin(proj)*45688.65);
+}
+
+
+float noise(float2 st) {
+	float2 i = floor(st); 		// integer
+	float2 f = fract(st); 		// fractionalizes
+	float2 u = f * f  * (3-2*f); // cubic interpolation
+
+	return mix( mix( dot( random2(i + float2(0.0,0.0) ), f - float2(0.0,0.0) ),
+                     dot( random2(i + float2(1.0,0.0) ), f - float2(1.0,0.0) ), u.x),
+                mix( dot( random2(i + float2(0.0,1.0) ), f - float2(0.0,1.0) ),
+                     dot( random2(i + float2(1.0,1.0) ), f - float2(1.0,1.0) ), u.x), u.y);
+}
+
+
+float shape(float2 st, float time,  float2 origin, float2 size) {
+	// if d <= 0 st.x if st outside of segment on the left 
+	float d 	= st.x - origin.x;	
+	// if out <= 0 st.x if outside of segment
+	float out 	= size.x - d;	
+
+	float linewidth = 0.02;
+
+	float newY  = origin.y;
+	newY += sin(st.x*40)*noise(st+time*2)*0.5;
+
+	float mod = abs(fmod(st.x+time, 1*PI) + 1*PI)/3.6; 
+	newY += sin(st.x*20)*pow(mod,2.0)*0.05;
+	 
+
+	float yd    = st.y - (newY) - linewidth;
+	
+
+	return smoothstep(0,0.1,d) * smoothstep(0,0.1,out) * ( step(0, yd)-step(0.05,yd) );
+} 
 
 [[fragment]]
 float4 fragment_main(FragmentIn in [[stage_in]],
@@ -56,31 +97,13 @@ float4 fragment_main(FragmentIn in [[stage_in]],
 	float3 color(0);
 	
 	float2 st = in.st;
+	st *= 2;
 
-	st *= 10;
-	
-	st = (st-float2(5.0))*(abs(sin(uniforms.time*0.2))*5.);
-	st.x += uniforms.time;
+//	color = drawSmoothRectanglePerimiter(st,float2(0.25),0.5,0.001,0.001, uniforms.time);
 
-	float2 iPos = floor(st); 
-	float2 fPos = fract(st); 
+	color = shape(st, 0.5f*uniforms.time, float2(0,0.25), float(5));
+	color += shape(st, uniforms.time, float2(0.0,0.75), float(5));
+	color += shape(st, 2*uniforms.time, float2(0.0,1.25), float(5));
 
-	float2 tile = truchetPattern(fPos,random(iPos));
-
-
-	color = smoothstep(tile.x-0.3, tile.x, tile.y) - smoothstep(tile.x, tile.x+0.3, tile.y);
-	//color = float3(fPos,0);
-	//color = float3(iPos,0);
-	
-// Circles
-    color = (step(length(tile),0.6) -
-              step(length(tile),0.4) ) +
-             (step(length(tile-float2(1.)),0.6) -
-              step(length(tile-float2(1.)),0.4) );
-
-    // Truchet (2 triangles)
-    //color = step(tile.x,tile.y);
-
-
-	return float4(color,1);
+	return float4(1-color,1);
 }
